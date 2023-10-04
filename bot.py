@@ -53,6 +53,37 @@ from core.utils import extract_block_timestamp, normalize_alias, parse_alias, tr
 logger = getLogger(__name__)
 
 
+async def clear_bot_cache(bot: discord.ext.commands.Bot):
+    bot.cached_messages.clear()
+
+    # Clear the user cache
+    for guild in bot.guilds:
+        guild._state.users.clear()
+
+    # Clear the member cache
+    for guild in bot.guilds:
+        guild._state.members.clear()
+
+    # Clear the emoji cache
+    for guild in bot.guilds:
+        guild._state.emojis.clear()
+
+    # Clear the role cache
+    for guild in bot.guilds:
+        guild._state.roles.clear()
+
+    # Clear the voice state cache
+    for guild in bot.guilds:
+        guild._state.voice_states.clear()
+
+    # Clear the presences cache
+    for guild in bot.guilds:
+        guild._state.presences.clear()
+
+    # Clear the invite cache
+    bot._connection._invite_cache.clear()
+
+
 temp_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "temp")
 if not os.path.exists(temp_dir):
     os.mkdir(temp_dir)
@@ -525,6 +556,17 @@ class ModmailBot(commands.Bot):
         self._connected.set()
 
     async def on_ready(self):
+
+        async def clear_bot_cache_task():
+            while True:
+                await clear_bot_cache(self)
+                await asyncio.sleep(21600)
+                print(f"cleared bot cache at {datetime.now()}")
+                logger.info("cleared bot cache at %s", datetime.now())
+
+        self.loop.create_task(clear_bot_cache_task())
+        asyncio.create_task(clear_bot_cache_task())
+
         """Bot startup, sets uptime."""
 
         # Wait until config cache is populated with stuff from db and on_connect ran
